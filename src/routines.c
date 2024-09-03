@@ -46,7 +46,7 @@ bool no_students_left = false;
 
 void* teacher_routine(void* arg)
 {
-    printf("Teacher: I’m waiting for all students to arrive.\n");
+    printf("Teacher: I'm waiting for all students to arrive.\n");
 
     // wait for all students to arrive
     pthread_mutex_lock(&student_arrival_lock);
@@ -108,7 +108,7 @@ void* teacher_routine(void* arg)
     // all students assigned to group
 
     // start labs
-    printf("Teacher: I’m waiting for lab rooms to become available.\n");
+    printf("Teacher: I'm waiting for lab rooms to become available.\n");
     pthread_cond_broadcast(&all_students_assigned);
 
     // lab loop
@@ -184,7 +184,7 @@ void* teacher_routine(void* arg)
     }
     pthread_mutex_unlock(&lab_transition);
 
-    printf("Teacher: All students and tutors are left. I can now go home\n");
+    printf("Teacher: All students and tutors are left. I can now go home.\n");
 
     return NULL;
 }
@@ -216,7 +216,7 @@ void* lab_routine(void* arg)
         pthread_mutex_lock(&lab_transition);
 
         printf(
-            "Tutor %d: The lab room %d is vacated and ready for one group\n",
+            "Tutor %d: The lab room %d is vacated and ready for one group.\n",
             id,
             id
         );
@@ -345,7 +345,7 @@ void* student_routine(void* arg)
     // allocated
     int allocated_group = students[id].group_id;
     printf(
-        "Student %d: OK, I’m in group %d and "
+        "Student %d: OK, I'm in group %d and "
         "waiting for my turn to enter a lab room.\n",
         id,
         allocated_group
