@@ -292,10 +292,6 @@ void* lab_routine(void* arg)
         {
             queue_enq(labs_to_free, id);
         }
-        else
-        {
-            queue_enq(available_labs, id);
-        }
 
         pthread_cond_broadcast(&lab_complete);
 
