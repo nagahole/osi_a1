@@ -268,7 +268,7 @@ void* lab_routine(void* arg)
         // completed lab
         printf(
             "Tutor %d: Students in group %d have completed the lab "
-            "exercise in %.1g units of time. You may leave this room now.\n",
+            "exercise in %.1lf units of time. You may leave this room now.\n",
             id,
             tutor_labs[id].cur_group,
             time_to_take
