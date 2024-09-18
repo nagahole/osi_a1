@@ -63,7 +63,7 @@ int main()
 
     for (int i = 0; i < n_groups; i++)
     {
-        groups[i].num_members = GROUP_NOT_ASSIGNED;
+        groups[i].num_members = 0;
         groups[i].assigned_lab = NO_LAB_ASSIGNED;
         groups[i].num_in_lab = NO_LAB_ASSIGNED;
     }
@@ -74,7 +74,8 @@ int main()
     for (int i = 0; i < n_tutors; i++)
     {
         tutor_labs[i].cur_group = LAB_EMPTY;
-        tutor_labs[i].can_leave = false;
+        tutor_labs[i].flagged_to_leave = false;
+        tutor_labs[i].excused_by_teacher = false;
         tutor_labs[i].acked_teacher = false;
     }
 

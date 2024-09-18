@@ -1,5 +1,6 @@
 #include <queue.h>
 
+#include <stdint.h>
 #include <stdlib.h>
 
 struct queue* queue_create(int capacity)
@@ -74,6 +75,7 @@ void queue_clear(struct queue* queue)
 void queue_destroy(struct queue** queue)
 {
     free((*queue)->_array);
+    free(*queue);
     *queue = NULL;
 }
 

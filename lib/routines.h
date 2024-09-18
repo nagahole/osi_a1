@@ -1,6 +1,8 @@
 #ifndef ROUTINES_H
 #define ROUTINES_H 1
 
+#include <stdbool.h>
+
 #define GROUP_NOT_ASSIGNED (-1)
 #define STUDENT_NOT_ASSIGNED (-1)
 #define NO_LAB_ASSIGNED (-1)
@@ -24,7 +26,8 @@ struct group
 struct lab
 {
     int cur_group;
-    bool can_leave;
+    bool flagged_to_leave;
+    bool excused_by_teacher;
     bool acked_teacher;
 };
 

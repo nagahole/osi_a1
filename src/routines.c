@@ -1,6 +1,9 @@
+#define _POSIX_C_SOURCE 199309L
+
 #include <stdio.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <time.h>
 
 #include <routines.h>
 #include <queue.h>
@@ -87,13 +90,15 @@ void* teacher_routine(void* arg)
         // allocate student to group
         pthread_mutex_lock(&group_allocate);
 
-        students[sid].group_id = i % n_groups;
+        int group_id = i % n_groups;
+        students[sid].group_id = group_id;
         printf(
             "Teacher: student %d is in group %d.\n",
             sid,
             students[sid].group_id
         );
         students_assigned++;
+        groups[group_id].num_members++;
 
         pthread_cond_broadcast(&student_receive_id);
 
@@ -136,20 +141,19 @@ void* teacher_routine(void* arg)
     }
 
     no_students_left = true;
-
-    pthread_mutex_unlock(&lab_transition);
     // labs finished
 
     // free tutors
-    pthread_mutex_lock(&lab_transition);
-
     int labs_freed = 0;
 
     for (int i = 0; i < n_tutors; i++)
     {
-        if (tutor_labs[i].cur_group == GROUP_NOT_ASSIGNED)
-        {
+        if (
+            tutor_labs[i].cur_group == GROUP_NOT_ASSIGNED &&
+            !tutor_labs[i].flagged_to_leave
+        ) {
             queue_enq(labs_to_free, i);
+            tutor_labs[i].flagged_to_leave = true;
         }
     }
 
@@ -167,7 +171,7 @@ void* teacher_routine(void* arg)
             "Tutor %d, you can go home now.\n",
             lab_to_free
         );
-        tutor_labs[lab_to_free].can_leave = true;
+        tutor_labs[lab_to_free].excused_by_teacher = true;
         pthread_cond_broadcast(&update_for_labs);
 
         while (!tutor_labs[lab_to_free].acked_teacher)
@@ -211,7 +215,7 @@ void* lab_routine(void* arg)
     // right order now
 
     // group allocation finished and tutors can start running labs
-    while (!tutor_labs[id].can_leave)
+    while (!tutor_labs[id].excused_by_teacher)
     {
         pthread_mutex_lock(&lab_transition);
 
@@ -226,14 +230,14 @@ void* lab_routine(void* arg)
         pthread_cond_broadcast(&lab_ready);
 
         while (
-            !tutor_labs[id].can_leave &&
+            !tutor_labs[id].excused_by_teacher &&
             tutor_labs[id].cur_group == LAB_EMPTY // lab not chosen yet
         ) {
             pthread_cond_wait(&update_for_labs, &lab_transition);
         }
         pthread_mutex_unlock(&lab_transition);
 
-        if (tutor_labs[id].can_leave)
+        if (tutor_labs[id].excused_by_teacher)
         {
             break;
         }
@@ -263,7 +267,18 @@ void* lab_routine(void* arg)
 
         // * 2 in random function and then / 2.0 to maintain integral property
         double time_to_take = randint(time_limit, time_limit * 2) / 2.0;
-        usleep((unsigned int) (time_to_take * 1e6));
+
+        if (time_to_take > 0)
+        {
+            nanosleep(
+                (const struct timespec[])
+                {{
+                     (long) time_to_take,
+                     (long) (time_to_take * 1e9) % 1000000000L
+                }},
+                NULL
+            );
+        }
 
         // completed lab
         printf(
@@ -288,9 +303,10 @@ void* lab_routine(void* arg)
             pthread_cond_wait(&student_left_lab, &lab_transition);
         }
 
-        if (no_students_left)
+        if (no_students_left && !tutor_labs[id].flagged_to_leave)
         {
             queue_enq(labs_to_free, id);
+            tutor_labs[id].flagged_to_leave = true;
         }
 
         pthread_cond_broadcast(&lab_complete);
@@ -301,7 +317,7 @@ void* lab_routine(void* arg)
     // wait to be excused
     pthread_mutex_lock(&lab_transition);
 
-    while (!tutor_labs[id].can_leave)
+    while (!tutor_labs[id].excused_by_teacher)
     {
         pthread_cond_wait(&tutor_leave, &lab_transition);
     }
