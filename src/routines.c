@@ -41,7 +41,7 @@ struct queue* labs_to_free;
 // local states
 int students_present = 0;
 int students_assigned = 0;
-int cur_lab_started = 0;
+int cur_lab_to_start = 0;
 bool no_students_left = false;
 
 void* teacher_routine(void* arg)
@@ -203,7 +203,7 @@ void* lab_routine(void* arg)
 
     // start labs in order
     pthread_mutex_lock(&lab_transition);
-    while (cur_lab_started < id)
+    while (cur_lab_to_start < id)
     {
         pthread_cond_wait(&lab_ready, &lab_transition);
     }
@@ -221,7 +221,7 @@ void* lab_routine(void* arg)
             id
         );
 
-        cur_lab_started++;
+        cur_lab_to_start++;
         queue_enq(available_labs, id);
         pthread_cond_broadcast(&lab_ready);
 
@@ -308,7 +308,7 @@ void* lab_routine(void* arg)
 
     printf("Tutor %d: Thanks Teacher. Bye!\n", id);
     tutor_labs[id].acked_teacher = true;
-    pthread_cond_broadcast(&teacher_receive_ack);
+    pthread_cond_signal(&teacher_receive_ack);
 
     pthread_mutex_unlock(&lab_transition);
     // excused
